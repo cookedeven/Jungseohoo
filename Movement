@@ -1,0 +1,94 @@
+public float moveSpeed = 5f;            
+public float dashSpeed = 20f;           
+public float dashDuration = 0.2f;       
+public float dashTime = 0f;             
+private bool isDashing = false;         
+private Rigidbody rb;                   
+private Vector3 dashDirection;          
+
+public float cooldownTime = 1f;          
+private float cooldownTimer = 0f;
+
+void Start()
+{
+    rb = GetComponent<Rigidbody>();     
+}
+
+void Update()
+{
+    if (cooldownTimer > 0f)
+    {
+        cooldownTimer -= Time.deltaTime;
+    }
+
+    if (Input.GetKeyDown(KeyCode.Space) && !isDashing && cooldownTimer <= 0f)
+    {
+        StartDash();
+    }
+
+    
+    if (isDashing)
+    {
+        dashTime += Time.deltaTime;
+        if (dashTime >= dashDuration)
+        {
+            EndDash();
+        }
+    }
+    else
+    {
+        
+        RotateTowardsMouse();
+    }
+}
+
+void FixedUpdate()
+{
+    
+    if (isDashing)
+    {
+        rb.MovePosition(transform.position + dashDirection * dashSpeed * Time.fixedDeltaTime);
+    }
+    else
+    {
+        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveZ = Input.GetAxisRaw("Vertical");
+        Vector3 moveDirection = new Vector3(moveX, 0f, moveZ).normalized;
+        rb.MovePosition(transform.position + moveDirection * moveSpeed * Time.fixedDeltaTime);
+    }
+}
+
+void StartDash()
+{
+    isDashing = true;
+    dashTime = 0f;
+    cooldownTimer = cooldownTime;
+
+
+    float moveX = Input.GetAxisRaw("Horizontal");
+    float moveZ = Input.GetAxisRaw("Vertical");
+    Vector3 inputDirection = new Vector3(moveX, 0f, moveZ).normalized;
+
+    dashDirection = inputDirection != Vector3.zero ? inputDirection : transform.forward; 
+}
+
+void EndDash()
+{
+    isDashing = false;
+}
+
+void RotateTowardsMouse()
+{
+    
+    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+    RaycastHit hit;
+
+    if (Physics.Raycast(ray, out hit))
+    {
+        Vector3 direction = hit.point - transform.position;
+        direction.y = 0;  
+
+        Quaternion rotation = Quaternion.LookRotation(direction);
+        transform.rotation = rotation;
+    }
+}
