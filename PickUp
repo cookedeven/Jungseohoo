@@ -1,0 +1,93 @@
+public float grabRange = 5f; 
+public Transform holdPosition; 
+public LayerMask layerMask; 
+private GameObject closestHoldableObject = null;
+private GameObject heldObject = null;
+private string originalLayerName; 
+
+void Update()   
+{
+    if (Input.GetMouseButtonDown(0))
+    {
+        TryGrabObject();
+    }
+
+    if (Input.GetMouseButtonUp(0) && heldObject != null)
+    {
+        DropObject();
+    }
+}
+
+void TryGrabObject()
+{
+
+    Collider[] hitColliders = Physics.OverlapSphere(transform.position, grabRange, layerMask);
+
+
+    float closestDistance = Mathf.Infinity;
+
+    foreach (var collider in hitColliders)
+    {
+        if (collider.CompareTag("Holdable")) 
+        {
+            Vector3 direction = collider.transform.position - transform.position;
+            direction.y = 0; 
+            float distance = direction.magnitude;
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestHoldableObject = collider.gameObject;
+
+            }
+        }
+    }
+
+    
+    if (closestHoldableObject != null)
+    {
+        GrabObject(closestHoldableObject);
+    }
+    
+}
+
+void GrabObject(GameObject objectToGrab)
+{
+    heldObject = objectToGrab;
+
+    heldObject.transform.position = holdPosition.position;
+    heldObject.transform.SetParent(holdPosition); 
+
+    originalLayerName = LayerMask.LayerToName(heldObject.layer);
+
+    heldObject.layer = LayerMask.NameToLayer("Team1");
+
+    Rigidbody rb = heldObject.GetComponent<Rigidbody>();
+    if (rb != null)
+    {
+        rb.isKinematic = true;
+    }
+
+}
+
+public void DropObject()
+{
+    if (heldObject != null)
+    {
+        Rigidbody rb = heldObject.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false; 
+        }
+
+       
+        heldObject.transform.SetParent(null);
+
+       
+        heldObject.layer = LayerMask.NameToLayer(originalLayerName);
+
+        heldObject = null;
+        closestHoldableObject = null;
+
+    }
+}
